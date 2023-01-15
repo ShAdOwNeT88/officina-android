@@ -30,25 +30,142 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
     buildFeatures {
+        dataBinding true
         viewBinding true
     }
 }
 
 dependencies {
+    compileOnly GreaterJDKLibs.jdk9_deps
 
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.7.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.5.1'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
+    if (project.hasProperty('kapt')) {
+        kapt GreaterJDKLibs.jaxb_api
+        kapt GreaterJDKLibs.jaxb_core
+        kapt GreaterJDKLibs.jaxb_impl
+    }
 
-    implementation 'org.altbeacon:android-beacon-library:2.19.4'
+    annotationProcessor GreaterJDKLibs.jaxb_api
+    annotationProcessor GreaterJDKLibs.jaxb_core
+    annotationProcessor GreaterJDKLibs.jaxb_impl
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation Libs.kotlin_stdlib
+    implementation Libs.three_ten_abp
+
+    // SUPPORT
+    implementation Libs.google_material
+    // -- SUPPORT
+
+    //Google Play Services Maps
+    implementation Libs.play_services_maps
+
+    //ANDROIDX
+    implementation Libs.androidx_appcompat
+    implementation Libs.androidx_cardview
+    implementation Libs.androidx_constraint
+    implementation Libs.androidx_exifinterface
+    implementation Libs.androidx_navigation_fragment
+    implementation Libs.androidx_navigation_fragment_ktx
+    implementation Libs.androidx_navigation_ui
+    implementation Libs.androidx_navigation_ui_ktx
+    implementation Libs.androidx_recyclerview
+    //-- ANDROIDX
+
+    // RX
+    implementation Libs.rxandroid
+    implementation Libs.rxbinding4
+    implementation Libs.rxbinding4_core
+    implementation Libs.rxjava
+    implementation Libs.rxkotlin
+    // -- RX
+
+    // FUNCTIONAL
+    implementation Libs.arrow_core
+    implementation Libs.arrow_syntax
+//    kapt Libs.arrow_meta
+    // -- FUNCTIONAL
+
+    // NETWORK
+    implementation Libs.glide
+    implementation Libs.gson
+    implementation Libs.okhttp
+    implementation Libs.okhttp_logging
+    implementation Libs.retrofit
+    implementation Libs.retrofit_gson
+    implementation Libs.retrofit_rx
+    // -- NETWORK
+
+    //PAGEVIEWINDICATOR
+    implementation Libs.pageViewIndicator
+
+    // DEBUGGING
+    debugImplementation DebugLibs.leak_canary
+    debugImplementation DebugLibs.rxlint
+    // -- DEBUGGING
+
+    //KOIN
+    implementation Libs.koin
+    implementation Libs.koinViewModel
+
+    //JETPACK
+    implementation Libs.lifecycle_extensions
+    implementation Libs.lifecycle_viewmodel
+    implementation Libs.lifecycle_viewmodel_ktx
+
+    //FIREBASE
+    implementation Libs.firebase_analytics
+    implementation Libs.firebase_auth
+    implementation Libs.firebase_auth_ktx
+    implementation Libs.firebase_core
+    implementation Libs.firebase_crashlytics
+    implementation Libs.firebase_notifications
+    implementation Libs.firebase_remote_config
+    implementation Libs.firebase_storage
+    implementation Libs.firebase_performance_monitoring
+    implementation Libs.firebase_performance_monitoring_ktx
+
+    //LOGGING
+    //implementation Libs.sentry
+    implementation Libs.timber
+
+    //MEDIA
+    implementation Libs.pdfViewer
+    implementation Libs.ucrop
+    implementation Libs.lottie
+
+    //COUNTRY CODE PICKER LIBRARY
+    implementation Libs.country_code_picker_library
+
+    //FILE DOWNLOADER
+    implementation Libs.prdownloader
+
+    //HTML SPANNeR
+    implementation Libs.html_spanner
+
+    //ICU4J Lib for globalization support android older than 7
+    implementation Libs.icu4j
+
+    //camera x
+    implementation Libs.camerax
+    implementation Libs.camerax_lifecycle
+    implementation Libs.camerax_view
+
+    //altbeacon
+    implementation Libs.altBeacon
+
+    // TESTING
+    testImplementation TestLibs.assertk
+    testImplementation TestLibs.core_testing
+    testImplementation TestLibs.mockk
+    testImplementation TestLibs.mockito_kotlin
+    testImplementation TestLibs.koin_test
+    testImplementation TestLibs.kotlin_test
+    testImplementation TestLibs.okhttp_mockwebserver
+    testImplementation TestLibs.threetenbp
+    testImplementation TestLibs.kotlinx_coroutines
+    testImplementation TestLibs.androidx_core
+    testImplementation TestLibs.junit
+    androidTestRuntimeOnly TestLibs.junit
+    androidTestRuntimeOnly TestLibs.junit_test_runner
 }
