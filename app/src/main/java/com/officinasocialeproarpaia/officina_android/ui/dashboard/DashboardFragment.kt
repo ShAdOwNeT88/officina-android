@@ -17,6 +17,7 @@ import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.BeaconParser
 import org.altbeacon.beacon.Region
+import timber.log.Timber
 
 class DashboardFragment : Fragment(), BeaconConsumer {
     private var _binding: FragmentDashboardBinding? = null
@@ -48,13 +49,10 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
 
         val rangingObserver = Observer<Collection<Beacon>> { beacons ->
-            println("Ranged: ${beacons.count()} beacons")
+            Timber.e("Ranged: ${beacons.count()} beacons")
             for (beacon: Beacon in beacons) {
-                println("$beacon about ${beacon.distance} meters away")
-                println("Beacon data ${beacon.identifiers} ${beacon.rssi} ${beacon.txPower} ${beacon.bluetoothAddress} ${beacon.beaconTypeCode}" +
-                        "${beacon.serviceUuid} ${beacon.serviceUuid128Bit} ${beacon.manufacturer} ${beacon.bluetoothName} ${beacon.parserIdentifier}" +
-                        "${beacon.isMultiFrameBeacon} ${beacon.runningAverageRssi} ${beacon.measurementCount} ${beacon.packetCount} ${beacon.firstCycleDetectionTimestamp}" +
-                        "${beacon.lastCycleDetectionTimestamp}")
+                Timber.e("$beacon about ${beacon.distance} meters away")
+                Timber.w("Beacon data ${beacon.identifiers} ${beacon.rssi} ${beacon.txPower} ${beacon.bluetoothAddress} ${beacon.beaconTypeCode}${beacon.serviceUuid} ${beacon.serviceUuid128Bit} ${beacon.manufacturer} ${beacon.bluetoothName} ${beacon.parserIdentifier} ${beacon.isMultiFrameBeacon} ${beacon.runningAverageRssi} ${beacon.measurementCount} ${beacon.packetCount} ${beacon.firstCycleDetectionTimestamp}${beacon.lastCycleDetectionTimestamp}")
             }
         }
 
