@@ -7,12 +7,12 @@ object Versions {
 
     // platform
     const val buildTools = "29.0.3"
-    const val kotlin = "1.4.20"
+    const val kotlin = "1.5.20"
     const val minSdk = 21
     const val targetSdk = 33
 
     // 3rd party
-    const val androidx_navigation_version = "2.3.2"
+    const val androidx_navigation_version = "2.5.3"
     const val arrow_version = "0.11.0"
     const val camerax_version = "1.0.0-rc03"
     const val detekt = "1.14.2"
@@ -79,7 +79,8 @@ object Libs {
     const val kotlin_reflect = "org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}"
     const val kotlin_stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${Versions.kotlin}"
     const val lifecycle_extensions = "androidx.lifecycle:lifecycle-extensions:${Versions.lifecycle_version}"
-    const val lifecycle_viewmodel = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Versions.lifecycle_version}"
+    const val lifecycle_viewmodel = "androidx.lifecycle:lifecycle-viewmodel:${Versions.lifecycle_version}"
+    const val lifecycle_viewmodel_ktx = "androidx.lifecycle:lifecycle-viewmodel-ktx:${Versions.lifecycle_version}"
     const val lottie = "com.airbnb.android:lottie:3.5.0"
     const val okhttp = "com.squareup.okhttp3:okhttp:${Versions.okhttp}"
     const val okhttp_logging = "com.squareup.okhttp3:logging-interceptor:${Versions.okhttp}"
