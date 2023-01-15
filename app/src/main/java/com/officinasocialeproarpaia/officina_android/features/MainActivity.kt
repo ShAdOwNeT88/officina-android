@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android
+package com.officinasocialeproarpaia.officina_android.features
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -15,6 +15,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {

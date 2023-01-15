@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android.ui.dashboard
+package com.officinasocialeproarpaia.officina_android.features.dashboard
 
 import android.content.Context
 import android.content.Intent

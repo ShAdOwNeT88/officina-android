@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android.ui.home
+package com.officinasocialeproarpaia.officina_android.features.home
 
 import android.os.Bundle
 import android.view.LayoutInflater

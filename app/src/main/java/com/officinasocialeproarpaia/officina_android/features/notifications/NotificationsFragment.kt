@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android.ui.notifications
+package com.officinasocialeproarpaia.officina_android.features.notifications
 
 import android.os.Bundle
 import android.view.LayoutInflater
