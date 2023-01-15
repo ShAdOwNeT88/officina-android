@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android.features
+package com.officinasocialeproarpaia.officina_android.features.main
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -17,21 +18,27 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.ActivityMainBinding
+import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import org.koin.android.ext.android.inject
+import timber.log.Timber
 
-class MainActivity : AppCompatActivity() {
-
+class MainScreen : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val permissionRequestFineLocation = 1
     private val permissionRequestBackgroundLocation = 2
+    private val mainViewModel: MainViewModel by inject()
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupMainViewModel()
 
         permissionCheck()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        mainViewModel.send(MainEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
 
         val navView: BottomNavigationView = binding.navView
 
@@ -41,6 +48,15 @@ class MainActivity : AppCompatActivity() {
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications))
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+    }
+
+    private fun setupMainViewModel() {
+        mainViewModel.observe(lifecycleScope) {
+            when (it) {
+                is MainState.InProgress -> Timber.e("In Progress...need to be implemented")
+                is MainState.MainError -> Timber.e("Error ${it.error.message}")
+            }.exhaustive
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
