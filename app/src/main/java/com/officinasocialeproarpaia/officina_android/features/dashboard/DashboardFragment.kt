@@ -45,7 +45,8 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         dashboardViewModel.observe(lifecycleScope) {
             when (it) {
                 is DashboardState.InProgress -> Timber.e("In Progress...need to be implemented")
-                is DashboardState.DashboardError -> Timber.e("Error ${it.error.message}")
+                is DashboardState.Error -> Timber.e("Error ${it.error.message}")
+                is DashboardState.RetrievedMonumentsConfig -> Timber.e("Retrieved monument config ${it.monumentsConfig.monuments}")
             }.exhaustive
         }
     }
