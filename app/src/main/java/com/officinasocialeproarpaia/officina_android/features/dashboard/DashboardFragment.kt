@@ -36,8 +36,6 @@ class DashboardFragment : Fragment(), BeaconConsumer {
 
         dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
 
-        val textView: TextView = binding.textDashboard
-
         return root
     }
 
