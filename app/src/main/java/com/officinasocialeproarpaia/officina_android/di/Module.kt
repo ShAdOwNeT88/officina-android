@@ -5,7 +5,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.officinasocialeproarpaia.officina_android.features.AppNavigator
 import com.officinasocialeproarpaia.officina_android.features.Navigator
-import com.officinasocialeproarpaia.officina_android.features.main.MainViewModel
+import com.officinasocialeproarpaia.officina_android.features.dashboard.DashboardViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.viewmodel.dsl.viewModel
@@ -19,7 +19,7 @@ sealed class GoogleApi {
 }
 
 val viewModels = module {
-    viewModel { MainViewModel(scheduler = AndroidSchedulers.mainThread()) }
+    viewModel { DashboardViewModel(scheduler = AndroidSchedulers.mainThread()) }
 }
 
 val androidComponents = module {
