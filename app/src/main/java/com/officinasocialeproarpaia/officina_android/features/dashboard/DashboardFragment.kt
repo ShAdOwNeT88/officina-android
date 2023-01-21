@@ -10,30 +10,47 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.FragmentDashboardBinding
+import com.officinasocialeproarpaia.officina_android.utils.exhaustive
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
 import org.altbeacon.beacon.BeaconParser
 import org.altbeacon.beacon.Region
+import org.koin.android.ext.android.inject
 import timber.log.Timber
 
 class DashboardFragment : Fragment(), BeaconConsumer {
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private lateinit var beaconManager: BeaconManager
+    private val dashboardViewModel: DashboardViewModel by inject()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val dashboardViewModel = ViewModelProvider(this)[DashboardViewModel::class.java]
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
+        setupDashboardViewModel()
+        setBeaconManager()
+
+        dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
 
         val textView: TextView = binding.textDashboard
-        dashboardViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
 
+        return root
+    }
+
+    private fun setupDashboardViewModel() {
+        dashboardViewModel.observe(lifecycleScope) {
+            when (it) {
+                is DashboardState.InProgress -> Timber.e("In Progress...need to be implemented")
+                is DashboardState.DashboardError -> Timber.e("Error ${it.error.message}")
+            }.exhaustive
+        }
+    }
+
+    private fun setBeaconManager() {
         beaconManager = BeaconManager.getInstanceForApplication(this.requireContext())
         //BeaconManager.setDebug(true)
 
@@ -59,8 +76,6 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         val region = Region("all-beacons-region", null, null, null)
         beaconManager.getRegionViewModel(region).rangedBeacons.observe(this.requireActivity(), rangingObserver)
         beaconManager.startRangingBeacons(region)
-
-        return root
     }
 
     override fun onDestroyView() {
