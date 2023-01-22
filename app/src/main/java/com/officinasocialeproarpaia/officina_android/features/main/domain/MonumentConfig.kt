@@ -8,6 +8,8 @@ data class MonumentConfig(
     data class Monument(
         @SerializedName("beaconName") val beaconName: String,
         @SerializedName("beaconId") val beaconId: String,
+        @SerializedName("trackStartRange") val trackStartRange: Double,
+        @SerializedName("trackStopRange") val trackStopRange: Double,
         @SerializedName("monumentName") val monumentName: String,
         @SerializedName("monumentSubtitles") val monumentSubtitles: List<MonumentSubtitle>,
         @SerializedName("monumentAudioUrls") val monumentAudioUrls: List<MonumentAudioUrl>,
