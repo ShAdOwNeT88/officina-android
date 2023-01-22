@@ -62,7 +62,9 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         }
     }
 
-    private fun updateTrackTimerAndBar() {
+    private fun updateTrackInfo() {
+        binding.trackName.text = currentTrack?.audioUrl?.split("/")?.last()
+
         updateSeekBarTime = object : Runnable {
             override fun run() {
                 timeElapsed = mediaPlayer.currentPosition.toDouble()
@@ -105,7 +107,7 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         }
         binding.seekBar.max = finalTime.toInt()
         binding.seekBar.progress = timeElapsed.toInt()
-//        durationHandler.postDelayed(updateSeekBarTime, 100)
+        durationHandler.postDelayed(updateSeekBarTime, 100)
     }
 
     private fun pause() {
@@ -118,6 +120,9 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         mediaPlayer.stop()
         mediaPlayer.reset()
         currentTrack = null
+        binding.trackName.text = ""
+        binding.seekBar.progress = 0
+        binding.trackDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
     }
 
     private fun setBeaconManager() {
@@ -148,8 +153,8 @@ class DashboardFragment : Fragment(), BeaconConsumer {
                     val audioTrack = monument.monumentAudioUrls.first { audioTrack ->
                         audioTrack.language.equals(other = Locale.getDefault().language, ignoreCase = true)
                     }
+                    updateTrackInfo()
                     addTrackToAudioPlayer(audioTrack)
-                    updateTrackTimerAndBar()
                 } else if (beacon.distance > monument.trackStopRange) {
                     stop()
                 } else {
