@@ -149,12 +149,7 @@ class DashboardFragment : Fragment(), BeaconConsumer {
             beacons.forEach { beacon ->
                 val monument = monumentConfig.monuments.first { it.beaconId == beacon.id1.toString() }
                 if (beacon.distance < monument.trackStartRange) {
-                    //get correct url of the audio track based on Device locale language
-                    val audioTrack = monument.monumentAudioUrls.first { audioTrack ->
-                        audioTrack.language.equals(other = Locale.getDefault().language, ignoreCase = true)
-                    }
-                    updateTrackInfo()
-                    addTrackToAudioPlayer(audioTrack)
+                    setMonumentAudioTrack(monument)
                 } else if (beacon.distance > monument.trackStopRange) {
                     stop()
                 } else {
@@ -167,6 +162,13 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         val region = Region("all-beacons-region", null, null, null)
         beaconManager.getRegionViewModel(region).rangedBeacons.observe(this.requireActivity(), rangingObserver)
         beaconManager.startRangingBeacons(region)
+    }
+
+    private fun setMonumentAudioTrack(monument: MonumentConfig.Monument) {
+        //get correct url of the audio track based on Device locale language
+        val audioTrack = monument.monumentAudioUrls.first { audioTrack -> audioTrack.language.equals(other = Locale.getDefault().language, ignoreCase = true) }
+        updateTrackInfo()
+        addTrackToAudioPlayer(audioTrack)
     }
 
     override fun onDestroyView() {
