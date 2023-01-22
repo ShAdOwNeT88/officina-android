@@ -3,17 +3,22 @@ package com.officinasocialeproarpaia.officina_android.features.dashboard
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.FragmentDashboardBinding
+import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import java.io.IOException
+import java.lang.String
+import java.util.Locale
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
@@ -27,14 +32,23 @@ class DashboardFragment : Fragment(), BeaconConsumer {
     private val binding get() = _binding!!
     private lateinit var beaconManager: BeaconManager
     private val dashboardViewModel: DashboardViewModel by inject()
+    private val mediaPlayer: MediaPlayer = MediaPlayer()
+    private var timeElapsed: Double = 0.0
+    private var finalTime: Double = 0.0
+    private val durationHandler: Handler = Handler()
+    private lateinit var updateSeekBarTime: Runnable
+    private lateinit var monumentConfig: MonumentConfig
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
         setupDashboardViewModel()
         setBeaconManager()
+        updateTrackTimerAndBar()
 
         dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
+        binding.mediaPlay.setOnClickListener { play() }
+        binding.mediaPause.setOnClickListener { pause() }
 
         return root
     }
@@ -44,8 +58,61 @@ class DashboardFragment : Fragment(), BeaconConsumer {
             when (it) {
                 is DashboardState.InProgress -> Timber.e("In Progress...need to be implemented")
                 is DashboardState.Error -> Timber.e("Error ${it.error.message}")
-                is DashboardState.RetrievedMonumentsConfig -> Timber.e("Retrieved monument config ${it.monumentsConfig.monuments}")
+                is DashboardState.RetrievedMonumentsConfig -> {
+                    monumentConfig = it.monumentsConfig
+                    addTrackToAudioPlayer(it.monumentsConfig.monuments.first().monumentAudioUrls)
+                }
             }.exhaustive
+        }
+    }
+
+    private fun updateTrackTimerAndBar() {
+        updateSeekBarTime = object : Runnable {
+            override fun run() {
+                timeElapsed = mediaPlayer.currentPosition.toDouble()
+                finalTime = mediaPlayer.duration.toDouble()
+                val timeElapsedMin = (timeElapsed / 1000 / 60).toInt()
+                val timeElapsedSec = (timeElapsed / 1000 % 60).toInt()
+                val finalTimeMin = (finalTime / 1000 / 60).toInt()
+                val finalTimeSec = (finalTime / 1000 % 60).toInt()
+
+                binding.seekBar.max = finalTime.toInt()
+                binding.seekBar.progress = timeElapsed.toInt()
+
+                binding.trackDuration.text = String.format(
+                    Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
+                )
+
+                durationHandler.postDelayed(this, 100)
+            }
+        }
+    }
+
+    private fun addTrackToAudioPlayer(audioTracks: List<MonumentConfig.Monument.MonumentAudioUrl>) {
+        try {
+            //Add locale check to define correct audio to start (We have IT and ENG)
+            mediaPlayer.setDataSource(audioTracks.first { audioTrack -> audioTrack.language == "IT" }.audioUrl)
+            mediaPlayer.prepare()
+            timeElapsed = mediaPlayer.currentPosition.toDouble()
+            finalTime = mediaPlayer.duration.toDouble()
+            play()
+        } catch (e: IOException) {
+            Timber.e("Exception during media player init $e")
+        }
+    }
+
+    private fun play() {
+        if (mediaPlayer.isPlaying.not()) {
+            mediaPlayer.start()
+        }
+        binding.seekBar.max = finalTime.toInt()
+        binding.seekBar.progress = timeElapsed.toInt()
+        durationHandler.postDelayed(updateSeekBarTime, 100)
+    }
+
+    private fun pause() {
+        if (mediaPlayer.isPlaying) {
+            mediaPlayer.pause()
         }
     }
 

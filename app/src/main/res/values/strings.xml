@@ -8,4 +8,6 @@
     <string name="permission_request_description">Please grant location access so this app can detect beacons in the background.</string>
     <string name="permission_denied_title">Functionality limited</string>
     <string name="permission_denied_description"><![CDATA[Since location access has not been granted, this app will not be able to discover beacons in the background.  Please go to Settings -> Applications -> Permissions and grant location access to this app.]]></string>
+    <string name="audio_track_time">"%d:%d / %d:%d"</string>
+
 </resources>
