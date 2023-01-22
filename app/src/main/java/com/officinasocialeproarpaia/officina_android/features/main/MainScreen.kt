@@ -1,4 +1,4 @@
-package com.officinasocialeproarpaia.officina_android.features
+package com.officinasocialeproarpaia.officina_android.features.main
 
 import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -17,9 +18,11 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.ActivityMainBinding
+import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import org.koin.android.ext.android.inject
+import timber.log.Timber
 
-class MainActivity : AppCompatActivity() {
-
+class MainScreen : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val permissionRequestFineLocation = 1
     private val permissionRequestBackgroundLocation = 2
@@ -47,20 +50,18 @@ class MainActivity : AppCompatActivity() {
     private fun permissionCheck() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                if (checkSelfPermission(ACCESS_BACKGROUND_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED
-                ) {
+                if (checkSelfPermission(ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     if (shouldShowRequestPermissionRationale(ACCESS_BACKGROUND_LOCATION)) {
                         val builder = AlertDialog.Builder(this)
-                        builder.setTitle("This app needs background location access")
-                        builder.setMessage("Please grant location access so this app can detect beacons in the background.")
+                        builder.setTitle(getString(R.string.permission_request_title))
+                        builder.setMessage(getString(R.string.permission_request_description))
                         builder.setPositiveButton(android.R.string.ok, null)
                         builder.setOnDismissListener { requestPermissions(arrayOf(ACCESS_BACKGROUND_LOCATION), permissionRequestBackgroundLocation) }
                         builder.show()
                     } else {
                         val builder = AlertDialog.Builder(this)
-                        builder.setTitle("Functionality limited")
-                        builder.setMessage("Since background location access has not been granted, this app will not be able to discover beacons in the background.  Please go to Settings -> Applications -> Permissions and grant background location access to this app.")
+                        builder.setTitle(getString(R.string.permission_denied_title))
+                        builder.setMessage(getString(R.string.permission_denied_description))
                         builder.setPositiveButton(android.R.string.ok, null)
                         builder.setOnDismissListener { }
                         builder.show()
@@ -71,8 +72,8 @@ class MainActivity : AppCompatActivity() {
                     requestPermissions(arrayOf(ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION), permissionRequestFineLocation)
                 } else {
                     val builder = AlertDialog.Builder(this)
-                    builder.setTitle("Functionality limited")
-                    builder.setMessage("Since location access has not been granted, this app will not be able to discover beacons.  Please go to Settings -> Applications -> Permissions and grant location access to this app.")
+                    builder.setTitle(getString(R.string.permission_denied_title))
+                    builder.setMessage(getString(R.string.permission_denied_description))
                     builder.setPositiveButton(android.R.string.ok, null)
                     builder.setOnDismissListener { }
                     builder.show()
@@ -87,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             permissionRequestFineLocation -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(this.packageName, "fine location permission granted")
+                    Timber.d(this.packageName, "fine location permission granted")
                 } else {
                     val builder: AlertDialog.Builder = AlertDialog.Builder(this)
                     builder.setTitle("Functionality limited")
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
             }
             permissionRequestBackgroundLocation -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(this.packageName, "background location permission granted")
+                    Timber.d(this.packageName, "background location permission granted")
                 } else {
                     val builder: AlertDialog.Builder = AlertDialog.Builder(this)
                     builder.setTitle("Functionality limited")

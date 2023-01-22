@@ -1,5 +1,116 @@
+
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    <!-- Standard dimensions-->
+    <dimen name="card_radius_default">8dp</dimen>
+    <dimen name="elevation_progress">10dp</dimen>
+    <dimen name="elevation_standard">4dp</dimen>
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="officina_peekHeight">90dp</dimen>
+    <dimen name="profile_avatar_size">70dp</dimen>
+    <dimen name="fab_size">40dp</dimen>
+    <dimen name="edit_fab_size">28dp</dimen>
+    <dimen name="bottom_navigation_height">60dp</dimen>
+
+    <!-- Standard dimensions for text-->
+    <dimen name="officina_text_size_title_big">28sp</dimen>
+    <dimen name="officina_text_size_title">20sp</dimen>
+    <dimen name="officina_text_size_bigger">16sp</dimen>
+    <dimen name="officina_text_size_default">14sp</dimen>
+    <dimen name="officina_text_size_small">12sp</dimen>
+    <dimen name="officina_text_size_smaller">11sp</dimen>
+    <dimen name="officina_text_size_very_small">8sp</dimen>
+    <dimen name="line_spacing_default">4sp</dimen>
+
+    <!-- Standard dimensions for margins -->
+    <dimen name="officina_margin_xxxbig">72dp</dimen>
+    <dimen name="officina_margin_xxbig">48dp</dimen>
+    <dimen name="officina_margin_xbig">32dp</dimen>
+    <dimen name="officina_margin_verybig">24dp</dimen>
+    <dimen name="officina_margin_big">20dp</dimen>
+    <dimen name="officina_margin_bigger">16dp</dimen>
+    <dimen name="officina_margin_default">12dp</dimen>
+    <dimen name="officina_margin_small">8dp</dimen>
+    <dimen name="officina_margin_smaller">4dp</dimen>
+    <dimen name="officina_margin_very_small">2dp</dimen>
+
+    <!-- Standard dimensions for icons -->
+    <dimen name="officina_icon_xlarge_size">60dp</dimen>
+    <dimen name="officina_icon_verybig_size">40dp</dimen>
+    <dimen name="officina_icon_medium_size">32dp</dimen>
+    <dimen name="officina_icon_default_size">20dp</dimen>
+    <dimen name="officina_icon_small_size">16dp</dimen>
+
+    <!-- Standard dimensions for buttons-->
+    <dimen name="officina_button_width">200dp</dimen>
+    <dimen name="officina_button_width_bigger">260dp</dimen>
+    <dimen name="officina_button_padding">12dp</dimen>
+    <dimen name="officina_button_padding_bigger">16dp</dimen>
+    <dimen name="officina_button_radius">8dp</dimen>
+    <dimen name="officina_button_vertical_distance">12dp</dimen>
+
+    <!-- Dimensions for onboarding -->
+    <dimen name="onboarding_indicator_radius">4dp</dimen>
+
+    <!-- Dimensions for registration -->
+    <dimen name="registration_input_vertical_distance">12dp</dimen>
+
+    <!-- Dimensions for news section-->
+    <dimen name="news_card_image_height">120dp</dimen>
+    <dimen name="news_bookmark_icon_width">16dp</dimen>
+    <dimen name="news_bookmark_icon_height">18dp</dimen>
+    <dimen name="news_title_linespacingextra">-4sp</dimen>
+
+    <!-- Dimensions for related news card -->
+    <dimen name="news_relatednews_card_margin">8dp</dimen>
+    <dimen name="news_relatednews_item_width">220dp</dimen>
+    <dimen name="news_relatednews_title_linespacingextra">-4sp</dimen>
+
+    <!-- Dimensions for news detail -->
+    <dimen name="news_detail_image_radius">16dp</dimen>
+    <dimen name="news_detail_title_linespacingextra">-8sp</dimen>
+    <dimen name="news_detail_body_linespacingextra">8sp</dimen>
+    <dimen name="news_detail_author_linespacingextra">4sp</dimen>
+
+    <!-- Dimensions for locale selection -->
+    <dimen name="locale_header_message_height">48dp</dimen>
+    <dimen name="locale_item_radius">16dp</dimen>
+    <dimen name="locale_item_height">36dp</dimen>
+    <dimen name="locale_item_padding_side">16dp</dimen>
+    <dimen name="locale_item_padding_top">2dp</dimen>
+    <dimen name="locale_item_margin_bottom">2dp</dimen>
+    <dimen name="locale_item_margin">8dp</dimen>
+
+    <!-- Dimensions for search selection -->
+    <dimen name="sarch_item_radius">30dp</dimen>
+
+    <!-- Dimensions for settings selection -->
+    <dimen name="settings_exit_margin">19dp</dimen>
+
+    <!-- Dimensions for detail question -->
+    <dimen name="answer_button_size_big">96dp</dimen>
+
+    <!-- Dimensions for image questionnaire -->
+    <dimen name="image_questionnaire_height">116dp</dimen>
+
+    <!-- Dimensions for consultancy description list image -->
+    <dimen name="consultancy_description_list_image_size">38dp</dimen>
+
+    <!-- Dimensions for consultancy -->
+    <dimen name="consultancy_next_button_width">138dp</dimen>
+    <dimen name="arrow_image_rotation">180</dimen>
+
+    <!-- Dimensions for ConsultancyDateSelectionScreen-->
+    <dimen name="datetime_cell_height">0dp</dimen>
+    <dimen name="datetime_cell_margin_start">4dp</dimen>
+    <dimen name="datetime_cell_margin_end">4dp</dimen>
+
+    <dimen name="procedures_button_radius">48dp</dimen>
+
+    <dimen name="news_guides_tab_button_height">32dp</dimen>
+    <dimen name="news_guides_button_padding_xbig">40dp</dimen>
+    <dimen name="button_shutter_width">68dp</dimen>
+    <dimen name="button_camera_switch_width">32dp</dimen>
+
+    <dimen name="picture_popup_button_padding">8dp</dimen>
 </resources>
