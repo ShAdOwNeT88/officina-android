@@ -57,8 +57,9 @@ dependencies {
     implementation Libs.google_material
     // -- SUPPORT
 
-    //Google Play Services Maps
+    //Google Play Services Maps and Location
     implementation Libs.play_services_maps
+    implementation Libs.play_services_location
 
     //ANDROIDX
     implementation Libs.androidx_appcompat
