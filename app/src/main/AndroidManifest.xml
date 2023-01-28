@@ -23,6 +23,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Officinaandroid"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyApyaGMNKHX58VFLzUm3GG0EQM68dHF28E" />
+
         <activity
             android:name=".features.main.MainScreen"
             android:exported="true"
