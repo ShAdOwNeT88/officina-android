@@ -146,7 +146,7 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                 mediaPlayer.prepare()
                 timeElapsed = mediaPlayer.currentPosition.toDouble()
                 finalTime = mediaPlayer.duration.toDouble()
-                play()
+                //play()
             }
         } catch (e: IOException) {
             Timber.e("Exception during media player init $e")
@@ -314,7 +314,7 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         cardView.monumentImage.loadImageOrRemove(monument.photoUrl)
 
         setMonumentAudioTrack(monument)
-        
+
         cardView.monumentCard.visible(true)
 
         binding.monumentDetails.root.setOnClickListener {
@@ -378,6 +378,6 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
     }
 
     override fun onMapClick(p0: LatLng) {
-        TODO("Not yet implemented")
+        Timber.w("Clicked map in $p0")
     }
 }
