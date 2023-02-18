@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.location.LocationManager
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -24,10 +23,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.maps.android.clustering.ClusterManager
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.FragmentDashboardBinding
+import com.officinasocialeproarpaia.officina_android.features.dashboard.adapters.MarkerClusterRenderer
+import com.officinasocialeproarpaia.officina_android.features.dashboard.domain.MonumentClusterItem
 import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import com.officinasocialeproarpaia.officina_android.utils.exhaustive
 import com.officinasocialeproarpaia.officina_android.utils.showEnableLocationSettingDialog
@@ -60,20 +60,17 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
     private lateinit var map: GoogleMap
     private lateinit var mapView: SupportMapFragment
     private lateinit var myLocation: LatLng
+    private lateinit var clusterManager: ClusterManager<MonumentClusterItem>
+    private lateinit var clusterRenderer: MarkerClusterRenderer
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
         setupDashboardViewModel()
-        setBeaconManager()
 
         mapView = childFragmentManager.findFragmentById(R.id.map_view) as SupportMapFragment
         mapView.getMapAsync(this)
         setMonumentsMap()
-
-        dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
-        binding.mediaPlay.setOnClickListener { play() }
-        binding.mediaPause.setOnClickListener { pause() }
 
         return root
     }
@@ -83,7 +80,14 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
             when (it) {
                 is DashboardState.InProgress -> Timber.e("In Progress...need to be implemented")
                 is DashboardState.Error -> Timber.e("Error ${it.error.message}")
-                is DashboardState.RetrievedMonumentsConfig -> monumentConfig = it.monumentsConfig
+                is DashboardState.RetrievedMonumentsConfig -> {
+                    monumentConfig = it.monumentsConfig
+                    setMarkers(it.monumentsConfig.monuments)
+                    setBeaconManager()
+
+                    binding.mediaPlay.setOnClickListener { play() }
+                    binding.mediaPause.setOnClickListener { pause() }
+                }
             }.exhaustive
         }
     }
@@ -257,6 +261,12 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         return false
     }
 
+    private fun setMarkers(monuments: List<MonumentConfig.Monument>) {
+        clusterManager.clearItems()
+        monuments.forEach { monument -> clusterManager.addItem(MonumentClusterItem(monument)) }
+        clusterManager.cluster()
+    }
+
     override fun onMapReady(p0: GoogleMap) {
         map = p0
         map.mapType = GoogleMap.MAP_TYPE_NORMAL
@@ -265,22 +275,39 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         map.uiSettings.isMyLocationButtonEnabled = false
         map.moveCamera(CameraUpdateFactory.zoomTo(MAP_ZOOM))
         map.setOnMapClickListener(this)
+
+        clusterManager = ClusterManager<MonumentClusterItem>(requireContext(), map)
+        clusterRenderer = MarkerClusterRenderer(requireContext(), map, clusterManager)
+        clusterManager.renderer = clusterRenderer
+        map.setOnCameraIdleListener(clusterManager)
+
+        dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
+
+        setClusterClickListener()
         checkPermissions()
     }
 
-   /* private fun applyMapStyle(map: GoogleMap) {
-        try {
-            // Customise the styling of the base map using a JSON object defined
-            // in a raw resource file.
-            val success: Boolean = map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style_json))
-            if (!success) {
-                Timber.e("Style parsing failed.")
-            }
-        } catch (e: Resources.NotFoundException) {
-            Timber.e("Can't find style. Error: $e")
+    private fun setClusterClickListener() {
+        clusterManager.setOnClusterItemClickListener { selectedMonument ->
+            Timber.e("Clicked on element with title ${selectedMonument.title}, ${selectedMonument.position}")
+            //setSpaceDetail(selectedMonument)
+            true
         }
     }
-*/
+
+    /* private fun applyMapStyle(map: GoogleMap) {
+         try {
+             // Customise the styling of the base map using a JSON object defined
+             // in a raw resource file.
+             val success: Boolean = map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style_json))
+             if (!success) {
+                 Timber.e("Style parsing failed.")
+             }
+         } catch (e: Resources.NotFoundException) {
+             Timber.e("Can't find style. Error: $e")
+         }
+     }
+ */
     private fun checkPermissions() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map.isMyLocationEnabled = true
