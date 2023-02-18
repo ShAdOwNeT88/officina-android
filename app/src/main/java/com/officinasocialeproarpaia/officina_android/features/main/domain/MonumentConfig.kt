@@ -12,6 +12,7 @@ data class MonumentConfig(
         @SerializedName("trackStopRange") val trackStopRange: Double,
         @SerializedName("monumentName") val monumentName: String,
         @SerializedName("location") val location: Location?,
+        @SerializedName("photoUrl") val photoUrl: String?,
         @SerializedName("monumentSubtitles") val monumentSubtitles: List<MonumentSubtitle>,
         @SerializedName("monumentAudioUrls") val monumentAudioUrls: List<MonumentAudioUrl>,
         @SerializedName("monumentDescriptions") val monumentDescriptions: List<MonumentDescription>,
