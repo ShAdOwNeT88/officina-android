@@ -61,6 +61,7 @@ dependencies {
     //Google Play Services Maps and Location
     implementation Libs.play_services_maps
     implementation Libs.play_services_location
+    implementation Libs.play_services_maps_utils
 
     //ANDROIDX
     implementation Libs.androidx_appcompat
