@@ -72,7 +72,7 @@ object Libs {
     const val glide = "com.github.bumptech.glide:glide:4.11.0"
     const val google_material = "com.google.android.material:material:1.2.1"
     const val html_spanner = "com.github.NightWhistler:HtmlSpanner:0.4"
-    const val play_services_maps = "com.google.android.gms:play-services-maps:17.0.0"
+    const val play_services_maps = "com.google.android.gms:play-services-maps:18.1.0"
     const val play_services_location = "com.google.android.gms:play-services-location:17.0.0"
     const val gson = "com.google.code.gson:gson:2.8.6"
     const val koin = "org.koin:koin-android:${Versions.koin}"
