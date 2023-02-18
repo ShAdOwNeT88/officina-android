@@ -30,9 +30,12 @@ import com.officinasocialeproarpaia.officina_android.features.dashboard.adapters
 import com.officinasocialeproarpaia.officina_android.features.dashboard.domain.MonumentClusterItem
 import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import com.officinasocialeproarpaia.officina_android.utils.loadImageOrRemove
 import com.officinasocialeproarpaia.officina_android.utils.showEnableLocationSettingDialog
+import com.officinasocialeproarpaia.officina_android.utils.visible
 import java.io.IOException
 import java.util.Locale
+import net.nightwhistler.htmlspanner.HtmlSpanner
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
@@ -85,8 +88,8 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                     setMarkers(it.monumentsConfig.monuments)
                     setBeaconManager()
 
-                    binding.mediaPlay.setOnClickListener { play() }
-                    binding.mediaPause.setOnClickListener { pause() }
+                    binding.monumentDetails.mediaPlay.setOnClickListener { play() }
+                    binding.monumentDetails.mediaPause.setOnClickListener { pause() }
                 }
             }.exhaustive
         }
@@ -112,7 +115,7 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
     }
 
     private fun updateTrackInfo() {
-        binding.trackName.text = currentTrack?.audioUrl?.split("/")?.last()
+        binding.monumentDetails.monumentAudioTitle.text = currentTrack?.audioUrl?.split("/")?.last()
 
         updateSeekBarTime = object : Runnable {
             override fun run() {
@@ -123,10 +126,10 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                 val finalTimeMin = (finalTime / 1000 / 60).toInt()
                 val finalTimeSec = (finalTime / 1000 % 60).toInt()
 
-                binding.seekBar.max = finalTime.toInt()
-                binding.seekBar.progress = timeElapsed.toInt()
+                binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
+                binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
 
-                binding.trackDuration.text = String.format(
+                binding.monumentDetails.monumentAudioDuration.text = String.format(
                     Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
                 )
 
@@ -154,8 +157,8 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         if (mediaPlayer.isPlaying.not()) {
             mediaPlayer.start()
         }
-        binding.seekBar.max = finalTime.toInt()
-        binding.seekBar.progress = timeElapsed.toInt()
+        binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
+        binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
         durationHandler.postDelayed(updateSeekBarTime, 100)
     }
 
@@ -169,9 +172,9 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         mediaPlayer.stop()
         mediaPlayer.reset()
         currentTrack = null
-        binding.trackName.text = ""
-        binding.seekBar.progress = 0
-        binding.trackDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
+        binding.monumentDetails.monumentAudioTitle.text = ""
+        binding.monumentDetails.monumentAudioSeekBar.progress = 0
+        binding.monumentDetails.monumentAudioDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
     }
 
     private fun setBeaconManager() {
@@ -198,7 +201,8 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
             beacons.forEach { beacon ->
                 val monument = monumentConfig.monuments.first { it.beaconId == beacon.id1.toString() }
                 if (beacon.distance < monument.trackStartRange) {
-                    setMonumentAudioTrack(monument)
+                    //setMonumentAudioTrack(monument)
+                    setMonumentDetail(monument = monument)
                 } else if (beacon.distance > monument.trackStopRange) {
                     stop()
                 } else {
@@ -289,9 +293,33 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
 
     private fun setClusterClickListener() {
         clusterManager.setOnClusterItemClickListener { selectedMonument ->
-            Timber.e("Clicked on element with title ${selectedMonument.title}, ${selectedMonument.position}")
-            //setSpaceDetail(selectedMonument)
+            setMonumentDetail(selectedMonument.monument)
             true
+        }
+    }
+
+    private fun setMonumentDetail(monument: MonumentConfig.Monument) {
+        val cardView = binding.monumentDetails
+        cardView.monumentName.text = monument.monumentName
+
+        cardView.monumentDescriptionPreview.text = HtmlSpanner().fromHtml(monument.monumentDescriptions.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.description)
+
+        cardView.monumentAudioTitle.text = monument.monumentSubtitles.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.subtitle
+
+        cardView.monumentImage.setImageDrawable(null)
+        cardView.monumentImage.loadImageOrRemove(monument.photoUrl)
+
+        setMonumentAudioTrack(monument)
+        
+        cardView.monumentCard.visible(true)
+
+        binding.monumentDetails.root.setOnClickListener {
+            Timber.e("Navigate to monuments details page!!, NOT IMPLEMENTED YET")
+            //navigator.openCoworkingDetailsScreen(requireActivity(), monument.id, myLocation.latitude, myLocation.longitude)
         }
     }
 

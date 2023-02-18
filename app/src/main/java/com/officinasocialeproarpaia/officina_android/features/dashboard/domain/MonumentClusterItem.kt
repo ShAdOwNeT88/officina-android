@@ -5,7 +5,7 @@ import com.google.maps.android.clustering.ClusterItem
 import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import java.util.Locale
 
-class MonumentClusterItem(private val monument: MonumentConfig.Monument) : ClusterItem {
+class MonumentClusterItem(val monument: MonumentConfig.Monument) : ClusterItem {
 
     //Need to check if latitude and longitude are correct, in case of null we could set 0.0 for both parameters
     private val position: LatLng = if (monument.location != null) {
