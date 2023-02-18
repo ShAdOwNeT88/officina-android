@@ -11,13 +11,27 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/dashboard_tracks_player_container"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:context=".DashboardFragment" />
 
-    <LinearLayout
+    <include
+        android:id="@+id/monument_details"
+        layout="@layout/cardview_monument"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/officina_margin_big"
+        android:layout_marginEnd="@dimen/officina_margin_big"
+        android:layout_marginBottom="@dimen/cardview_margin_bottom"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible" />
+
+    <!--<LinearLayout
         android:id="@+id/dashboard_tracks_player_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -71,6 +85,6 @@
                 android:layout_height="wrap_content"
                 android:src="@android:drawable/ic_media_play" />
         </LinearLayout>
-    </LinearLayout>
+    </LinearLayout>-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
