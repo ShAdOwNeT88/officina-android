@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -30,6 +31,10 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.DrawableImageViewTarget
 import com.bumptech.glide.request.transition.Transition
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.officinasocialeproarpaia.officina_android.R
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -40,8 +45,8 @@ import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.ZoneOffset
 import timber.log.Timber
 
-private const val MAX_RESULTS = 5
 private const val IMG_QUALITY = 100
+private const val LOCATION_SETTING_REQUEST = 999
 
 val <T> T.exhaustive: T
     get() = this
@@ -268,5 +273,38 @@ fun setForceShowMenuIcon(popupMenu: PopupMenu) {
         }
     } catch (e: Throwable) {
         Timber.e("error force show menu icons $e")
+    }
+}
+
+fun Activity.showEnableLocationSettingDialog() {
+    this.let {
+        val locationRequest = LocationRequest.create()
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+
+        val task = LocationServices.getSettingsClient(it)
+            .checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener { response ->
+            val states = response.locationSettingsStates
+            if (states.isLocationPresent) {
+                //Do something
+            }
+        }
+        task.addOnFailureListener { e ->
+            if (e is ResolvableApiException) {
+                try {
+                    // Handle result in onActivityResult()
+                    e.startResolutionForResult(
+                        it,
+                        LOCATION_SETTING_REQUEST
+                    )
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    //do nothing
+                }
+            }
+        }
     }
 }

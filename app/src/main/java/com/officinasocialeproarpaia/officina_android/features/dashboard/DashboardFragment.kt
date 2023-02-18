@@ -1,21 +1,36 @@
 package com.officinasocialeproarpaia.officina_android.features.dashboard
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.location.LocationManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.MarkerOptions
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.FragmentDashboardBinding
 import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import com.officinasocialeproarpaia.officina_android.utils.showEnableLocationSettingDialog
 import java.io.IOException
 import java.util.Locale
 import org.altbeacon.beacon.Beacon
@@ -26,7 +41,11 @@ import org.altbeacon.beacon.Region
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
-class DashboardFragment : Fragment(), BeaconConsumer {
+
+private const val MAP_ZOOM = 12.0f
+const val PERMISSION_REQUEST_COARSE_LOCATION = 23
+
+class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, GoogleMap.OnMapClickListener {
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private lateinit var beaconManager: BeaconManager
@@ -38,12 +57,19 @@ class DashboardFragment : Fragment(), BeaconConsumer {
     private lateinit var updateSeekBarTime: Runnable
     private lateinit var monumentConfig: MonumentConfig
     private var currentTrack: MonumentConfig.Monument.MonumentAudioUrl? = null
+    private lateinit var map: GoogleMap
+    private lateinit var mapView: SupportMapFragment
+    private lateinit var myLocation: LatLng
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
         setupDashboardViewModel()
         setBeaconManager()
+
+        mapView = childFragmentManager.findFragmentById(R.id.map_view) as SupportMapFragment
+        mapView.getMapAsync(this)
+        setMonumentsMap()
 
         dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
         binding.mediaPlay.setOnClickListener { play() }
@@ -59,6 +85,25 @@ class DashboardFragment : Fragment(), BeaconConsumer {
                 is DashboardState.Error -> Timber.e("Error ${it.error.message}")
                 is DashboardState.RetrievedMonumentsConfig -> monumentConfig = it.monumentsConfig
             }.exhaustive
+        }
+    }
+
+    private fun setMonumentsMap() {
+        val coarseLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+        val fineLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+        if (coarseLocationPermission != PackageManager.PERMISSION_GRANTED && fineLocationPermission != PackageManager.PERMISSION_GRANTED) {
+            this.requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSION_REQUEST_COARSE_LOCATION
+            )
+        }
+
+        LocationServices.getFusedLocationProviderClient(requireActivity()).lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val latLngLocation = LatLng(location.latitude, location.longitude)
+                myLocation = latLngLocation
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(myLocation, MAP_ZOOM))
+            }
         }
     }
 
@@ -178,9 +223,26 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         beaconManager.unbind(this)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (this::mapView.isInitialized) {
+            mapView.onDestroy()
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         beaconManager.unbind(this)
+        if (this::mapView.isInitialized) {
+            mapView.onPause()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (this::mapView.isInitialized) {
+            mapView.onLowMemory()
+        }
     }
 
     override fun onBeaconServiceConnect() {}
@@ -193,5 +255,74 @@ class DashboardFragment : Fragment(), BeaconConsumer {
 
     override fun bindService(intent: Intent?, connection: ServiceConnection?, mode: Int): Boolean {
         return false
+    }
+
+    override fun onMapReady(p0: GoogleMap) {
+        map = p0
+        map.mapType = GoogleMap.MAP_TYPE_NORMAL
+        //applyMapStyle(map)
+
+        map.uiSettings.isMyLocationButtonEnabled = false
+        map.moveCamera(CameraUpdateFactory.zoomTo(MAP_ZOOM))
+        map.setOnMapClickListener(this)
+        checkPermissions()
+    }
+
+   /* private fun applyMapStyle(map: GoogleMap) {
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success: Boolean = map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style_json))
+            if (!success) {
+                Timber.e("Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Timber.e("Can't find style. Error: $e")
+        }
+    }
+*/
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map.isMyLocationEnabled = true
+            LocationServices.getFusedLocationProviderClient(requireActivity()).lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    myLocation = LatLng(location.latitude, location.longitude)
+                }
+                checkGpsStatus()
+            }
+        } else {
+            this.requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSION_REQUEST_COARSE_LOCATION
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSION_REQUEST_COARSE_LOCATION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    val coarseLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                    val fineLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    if (coarseLocationPermission == PackageManager.PERMISSION_GRANTED && fineLocationPermission == PackageManager.PERMISSION_GRANTED) {
+                        map.isMyLocationEnabled = true
+                        checkGpsStatus()
+                    }
+                }
+                return
+            }
+        }
+    }
+
+    private fun checkGpsStatus() {
+        val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val gpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        if (!gpsStatus) {
+            requireActivity().showEnableLocationSettingDialog()
+        }
+    }
+
+    override fun onMapClick(p0: LatLng) {
+        TODO("Not yet implemented")
     }
 }

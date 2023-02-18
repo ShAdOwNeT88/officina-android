@@ -6,8 +6,30 @@
     android:layout_height="match_parent"
     tools:context=".features.dashboard.DashboardFragment">
 
+    <!--<com.google.android.gms.maps.MapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        tools:context=".DashboardFragment"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_tracks_player_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:name="com.google.android.gms.maps.SupportMapFragment" />-->
+
+    <fragment
+        android:id="@+id/map_view"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/dashboard_tracks_player_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:context=".DashboardFragment" />
+
     <LinearLayout
-        android:id="@+id/container"
+        android:id="@+id/dashboard_tracks_player_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -60,6 +82,6 @@
                 android:layout_height="wrap_content"
                 android:src="@android:drawable/ic_media_play" />
         </LinearLayout>
-
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
