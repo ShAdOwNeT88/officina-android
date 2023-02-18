@@ -114,8 +114,11 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         }
     }
 
-    private fun updateTrackInfo() {
-        binding.monumentDetails.monumentAudioTitle.text = currentTrack?.audioUrl?.split("/")?.last()
+    private fun updateTrackInfo(monument: MonumentConfig.Monument) {
+//        binding.monumentDetails.monumentAudioTitle.text = currentTrack?.audioUrl?.split("/")?.last()
+        binding.monumentDetails.monumentAudioTitle.text = monument.monumentSubtitles.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.subtitle
 
         updateSeekBarTime = object : Runnable {
             override fun run() {
@@ -202,9 +205,11 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                 val monument = monumentConfig.monuments.first { it.beaconId == beacon.id1.toString() }
                 if (beacon.distance < monument.trackStartRange) {
                     //setMonumentAudioTrack(monument)
-                    setMonumentDetail(monument = monument)
+                    //TODO This causing crashes and general instability right now
+                    //setMonumentDetail(monument = monument)
                 } else if (beacon.distance > monument.trackStopRange) {
-                    stop()
+                    //TODO This causing crashes and general instability right now
+                    //stop()
                 } else {
                     Timber.w("The monument is too far away so please get closer BeaconName: ${beacon.bluetoothName} BeaconId: ${beacon.id1}")
                 }
@@ -220,7 +225,7 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
     private fun setMonumentAudioTrack(monument: MonumentConfig.Monument) {
         //get correct url of the audio track based on Device locale language
         val audioTrack = monument.monumentAudioUrls.first { audioTrack -> audioTrack.language.equals(other = Locale.getDefault().language, ignoreCase = true) }
-        updateTrackInfo()
+        updateTrackInfo(monument)
         addTrackToAudioPlayer(audioTrack)
     }
 
