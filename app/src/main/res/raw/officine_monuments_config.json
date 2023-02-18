@@ -6,6 +6,10 @@
       "trackStartRange": 0.50,
       "trackStopRange": 0.50,
       "monumentName": "L'Abbazia Di San Fortunato",
+      "location": {
+        "latitude": 41.0334484,
+        "longitude": 14.5527491
+      },
       "monumentSubtitles": [
         {
           "language": "IT",

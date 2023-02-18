@@ -11,10 +11,16 @@ data class MonumentConfig(
         @SerializedName("trackStartRange") val trackStartRange: Double,
         @SerializedName("trackStopRange") val trackStopRange: Double,
         @SerializedName("monumentName") val monumentName: String,
+        @SerializedName("location") val location: Location?,
         @SerializedName("monumentSubtitles") val monumentSubtitles: List<MonumentSubtitle>,
         @SerializedName("monumentAudioUrls") val monumentAudioUrls: List<MonumentAudioUrl>,
         @SerializedName("monumentDescriptions") val monumentDescriptions: List<MonumentDescription>,
     ) {
+        data class Location(
+            @SerializedName("latitude") val latitude: Double,
+            @SerializedName("longitude") val longitude: Double,
+        )
+
         data class MonumentSubtitle(
             @SerializedName("language") val language: String,
             @SerializedName("subtitle") val subtitle: String,
