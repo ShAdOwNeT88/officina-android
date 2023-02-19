@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -57,8 +58,10 @@ dependencies {
     implementation Libs.google_material
     // -- SUPPORT
 
-    //Google Play Services Maps
+    //Google Play Services Maps and Location
     implementation Libs.play_services_maps
+    implementation Libs.play_services_location
+    implementation Libs.play_services_maps_utils
 
     //ANDROIDX
     implementation Libs.androidx_appcompat

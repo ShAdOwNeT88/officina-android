@@ -1,23 +1,41 @@
 package com.officinasocialeproarpaia.officina_android.features.dashboard
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.clustering.ClusterManager
 import com.officinasocialeproarpaia.officina_android.R
 import com.officinasocialeproarpaia.officina_android.databinding.FragmentDashboardBinding
+import com.officinasocialeproarpaia.officina_android.features.dashboard.adapters.MarkerClusterRenderer
+import com.officinasocialeproarpaia.officina_android.features.dashboard.domain.MonumentClusterItem
 import com.officinasocialeproarpaia.officina_android.features.main.domain.MonumentConfig
 import com.officinasocialeproarpaia.officina_android.utils.exhaustive
+import com.officinasocialeproarpaia.officina_android.utils.loadImageOrRemove
+import com.officinasocialeproarpaia.officina_android.utils.showEnableLocationSettingDialog
+import com.officinasocialeproarpaia.officina_android.utils.visible
 import java.io.IOException
 import java.util.Locale
+import net.nightwhistler.htmlspanner.HtmlSpanner
 import org.altbeacon.beacon.Beacon
 import org.altbeacon.beacon.BeaconConsumer
 import org.altbeacon.beacon.BeaconManager
@@ -26,7 +44,11 @@ import org.altbeacon.beacon.Region
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
-class DashboardFragment : Fragment(), BeaconConsumer {
+
+private const val MAP_ZOOM = 12.0f
+const val PERMISSION_REQUEST_COARSE_LOCATION = 23
+
+class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, GoogleMap.OnMapClickListener {
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private lateinit var beaconManager: BeaconManager
@@ -38,16 +60,20 @@ class DashboardFragment : Fragment(), BeaconConsumer {
     private lateinit var updateSeekBarTime: Runnable
     private lateinit var monumentConfig: MonumentConfig
     private var currentTrack: MonumentConfig.Monument.MonumentAudioUrl? = null
+    private lateinit var map: GoogleMap
+    private lateinit var mapView: SupportMapFragment
+    private lateinit var myLocation: LatLng
+    private lateinit var clusterManager: ClusterManager<MonumentClusterItem>
+    private lateinit var clusterRenderer: MarkerClusterRenderer
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
         val root: View = binding.root
         setupDashboardViewModel()
-        setBeaconManager()
 
-        dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
-        binding.mediaPlay.setOnClickListener { play() }
-        binding.mediaPause.setOnClickListener { pause() }
+        mapView = childFragmentManager.findFragmentById(R.id.map_view) as SupportMapFragment
+        mapView.getMapAsync(this)
+        setMonumentsMap()
 
         return root
     }
@@ -57,30 +83,60 @@ class DashboardFragment : Fragment(), BeaconConsumer {
             when (it) {
                 is DashboardState.InProgress -> Timber.e("In Progress...need to be implemented")
                 is DashboardState.Error -> Timber.e("Error ${it.error.message}")
-                is DashboardState.RetrievedMonumentsConfig -> monumentConfig = it.monumentsConfig
+                is DashboardState.RetrievedMonumentsConfig -> {
+                    monumentConfig = it.monumentsConfig
+                    setMarkers(it.monumentsConfig.monuments)
+                    setBeaconManager()
+
+                    binding.monumentDetails.mediaPlay.setOnClickListener { play() }
+                    binding.monumentDetails.mediaPause.setOnClickListener { pause() }
+                }
             }.exhaustive
         }
     }
 
-    private fun updateTrackInfo() {
-        binding.trackName.text = currentTrack?.audioUrl?.split("/")?.last()
+    private fun setMonumentsMap() {
+        val coarseLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+        val fineLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+        if (coarseLocationPermission != PackageManager.PERMISSION_GRANTED && fineLocationPermission != PackageManager.PERMISSION_GRANTED) {
+            this.requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSION_REQUEST_COARSE_LOCATION
+            )
+        }
+
+        LocationServices.getFusedLocationProviderClient(requireActivity()).lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val latLngLocation = LatLng(location.latitude, location.longitude)
+                myLocation = latLngLocation
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(myLocation, MAP_ZOOM))
+            }
+        }
+    }
+
+    private fun updateTrackInfo(monument: MonumentConfig.Monument) {
+//        binding.monumentDetails.monumentAudioTitle.text = currentTrack?.audioUrl?.split("/")?.last()
+        binding.monumentDetails.monumentAudioTitle.text = monument.monumentSubtitles.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.subtitle
 
         updateSeekBarTime = object : Runnable {
             override fun run() {
-                timeElapsed = mediaPlayer.currentPosition.toDouble()
-                finalTime = mediaPlayer.duration.toDouble()
-                val timeElapsedMin = (timeElapsed / 1000 / 60).toInt()
-                val timeElapsedSec = (timeElapsed / 1000 % 60).toInt()
-                val finalTimeMin = (finalTime / 1000 / 60).toInt()
-                val finalTimeSec = (finalTime / 1000 % 60).toInt()
+                if (mediaPlayer.isPlaying) {
+                    timeElapsed = mediaPlayer.currentPosition.toDouble()
+                    finalTime = mediaPlayer.duration.toDouble()
+                    val timeElapsedMin = (timeElapsed / 1000 / 60).toInt()
+                    val timeElapsedSec = (timeElapsed / 1000 % 60).toInt()
+                    val finalTimeMin = (finalTime / 1000 / 60).toInt()
+                    val finalTimeSec = (finalTime / 1000 % 60).toInt()
 
-                binding.seekBar.max = finalTime.toInt()
-                binding.seekBar.progress = timeElapsed.toInt()
+                    binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
+                    binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
 
-                binding.trackDuration.text = String.format(
-                    Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
-                )
-
+                    binding.monumentDetails.monumentAudioDuration.text = String.format(
+                        Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
+                    )
+                }
                 durationHandler.postDelayed(this, 100)
             }
         }
@@ -105,8 +161,8 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         if (mediaPlayer.isPlaying.not()) {
             mediaPlayer.start()
         }
-        binding.seekBar.max = finalTime.toInt()
-        binding.seekBar.progress = timeElapsed.toInt()
+        binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
+        binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
         durationHandler.postDelayed(updateSeekBarTime, 100)
     }
 
@@ -117,12 +173,14 @@ class DashboardFragment : Fragment(), BeaconConsumer {
     }
 
     private fun stop() {
-        mediaPlayer.stop()
-        mediaPlayer.reset()
-        currentTrack = null
-        binding.trackName.text = ""
-        binding.seekBar.progress = 0
-        binding.trackDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
+        if (mediaPlayer.isPlaying) {
+            mediaPlayer.stop()
+            mediaPlayer.reset()
+            currentTrack = null
+            binding.monumentDetails.monumentAudioTitle.text = ""
+            binding.monumentDetails.monumentAudioSeekBar.progress = 0
+            binding.monumentDetails.monumentAudioDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
+        }
     }
 
     private fun setBeaconManager() {
@@ -139,8 +197,10 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(BeaconParser.URI_BEACON_LAYOUT))
         // The example shows how to find iBeacon.
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
+        beaconManager.backgroundScanPeriod = 1500L
+        beaconManager.foregroundScanPeriod = 1500L
 
-        //id1: 0x00626c75657570626561636f6e7307 about 1.281532517328134 meters away
+        //id1: 0x00626c7565757062656mBeaconManager.setBackgroundScanPeriod(1100l);1636f6e7307 about 1.281532517328134 meters away
         //Beacon data identifiers [0x00626c75657570626561636f6e7307] rssi -75 txPower -69 bluetoothAddress CD:6F:88:9C:1C:44 beaconTypeCode 16 serviceUuid 65194 serviceUuid128Bit [B@4a08072
         //Beacon data manufacturer 65194 bluetoothName BlueUp-01-011671 parserIdentifier null isMultiFrameBeacon false runningAverageRssi -74.71428571428571
         //Beacon data measurementCount 9 packetCount 1 firstCycleDetectionTimestamp 1674385070391 lastCycleDetectionTimestamp 1674385070391
@@ -149,8 +209,15 @@ class DashboardFragment : Fragment(), BeaconConsumer {
             beacons.forEach { beacon ->
                 val monument = monumentConfig.monuments.first { it.beaconId == beacon.id1.toString() }
                 if (beacon.distance < monument.trackStartRange) {
-                    setMonumentAudioTrack(monument)
+                    //setMonumentAudioTrack(monument)
+                    //TODO This causing crashes and general instability right now
+                    //TODO Need to check when i walk away from a particular beacon otherwise the app stops  all the audios even if I'm out of range
+                    //TODO for another beacon and not the one that I'm listen to.
+                    Timber.e("Beacon in range ${beacon.id1} with distance ${beacon.distance}")
+                    setMonumentDetail(monument = monument)
                 } else if (beacon.distance > monument.trackStopRange) {
+                    //TODO This causing crashes and general instability right now
+                    Timber.e("No beacons in range")
                     stop()
                 } else {
                     Timber.w("The monument is too far away so please get closer BeaconName: ${beacon.bluetoothName} BeaconId: ${beacon.id1}")
@@ -167,7 +234,7 @@ class DashboardFragment : Fragment(), BeaconConsumer {
     private fun setMonumentAudioTrack(monument: MonumentConfig.Monument) {
         //get correct url of the audio track based on Device locale language
         val audioTrack = monument.monumentAudioUrls.first { audioTrack -> audioTrack.language.equals(other = Locale.getDefault().language, ignoreCase = true) }
-        updateTrackInfo()
+        updateTrackInfo(monument)
         addTrackToAudioPlayer(audioTrack)
     }
 
@@ -178,9 +245,26 @@ class DashboardFragment : Fragment(), BeaconConsumer {
         beaconManager.unbind(this)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (this::mapView.isInitialized) {
+            mapView.onDestroy()
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         beaconManager.unbind(this)
+        if (this::mapView.isInitialized) {
+            mapView.onPause()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (this::mapView.isInitialized) {
+            mapView.onLowMemory()
+        }
     }
 
     override fun onBeaconServiceConnect() {}
@@ -193,5 +277,121 @@ class DashboardFragment : Fragment(), BeaconConsumer {
 
     override fun bindService(intent: Intent?, connection: ServiceConnection?, mode: Int): Boolean {
         return false
+    }
+
+    private fun setMarkers(monuments: List<MonumentConfig.Monument>) {
+        clusterManager.clearItems()
+        monuments.forEach { monument -> clusterManager.addItem(MonumentClusterItem(monument)) }
+        clusterManager.cluster()
+    }
+
+    override fun onMapReady(p0: GoogleMap) {
+        map = p0
+        map.mapType = GoogleMap.MAP_TYPE_NORMAL
+        //applyMapStyle(map)
+
+        map.uiSettings.isMyLocationButtonEnabled = false
+        map.moveCamera(CameraUpdateFactory.zoomTo(MAP_ZOOM))
+        map.setOnMapClickListener(this)
+
+        clusterManager = ClusterManager<MonumentClusterItem>(requireContext(), map)
+        clusterRenderer = MarkerClusterRenderer(requireContext(), map, clusterManager)
+        clusterManager.renderer = clusterRenderer
+        map.setOnCameraIdleListener(clusterManager)
+
+        dashboardViewModel.send(DashboardEvent.RetrieveMonumentsConfig(resources.openRawResource(R.raw.officine_monuments_config)))
+
+        setClusterClickListener()
+        checkPermissions()
+    }
+
+    private fun setClusterClickListener() {
+        clusterManager.setOnClusterItemClickListener { selectedMonument ->
+            setMonumentDetail(selectedMonument.monument)
+            true
+        }
+    }
+
+    private fun setMonumentDetail(monument: MonumentConfig.Monument) {
+        val cardView = binding.monumentDetails
+        cardView.monumentName.text = monument.monumentName
+
+        cardView.monumentDescriptionPreview.text = HtmlSpanner().fromHtml(monument.monumentDescriptions.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.description)
+
+        cardView.monumentAudioTitle.text = monument.monumentSubtitles.first {
+            it.language.equals(other = Locale.getDefault().language, ignoreCase = true)
+        }.subtitle
+
+        cardView.monumentImage.setImageDrawable(null)
+        cardView.monumentImage.loadImageOrRemove(monument.photoUrl)
+
+        setMonumentAudioTrack(monument)
+
+        cardView.monumentCard.visible(true)
+
+        binding.monumentDetails.root.setOnClickListener {
+            Timber.e("Navigate to monuments details page!!, NOT IMPLEMENTED YET")
+            //navigator.openCoworkingDetailsScreen(requireActivity(), monument.id, myLocation.latitude, myLocation.longitude)
+        }
+    }
+
+    /* private fun applyMapStyle(map: GoogleMap) {
+         try {
+             // Customise the styling of the base map using a JSON object defined
+             // in a raw resource file.
+             val success: Boolean = map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style_json))
+             if (!success) {
+                 Timber.e("Style parsing failed.")
+             }
+         } catch (e: Resources.NotFoundException) {
+             Timber.e("Can't find style. Error: $e")
+         }
+     }
+ */
+    private fun checkPermissions() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map.isMyLocationEnabled = true
+            LocationServices.getFusedLocationProviderClient(requireActivity()).lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    myLocation = LatLng(location.latitude, location.longitude)
+                }
+                checkGpsStatus()
+            }
+        } else {
+            this.requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION),
+                PERMISSION_REQUEST_COARSE_LOCATION
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            PERMISSION_REQUEST_COARSE_LOCATION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    val coarseLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                    val fineLocationPermission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    if (coarseLocationPermission == PackageManager.PERMISSION_GRANTED && fineLocationPermission == PackageManager.PERMISSION_GRANTED) {
+                        map.isMyLocationEnabled = true
+                        checkGpsStatus()
+                    }
+                }
+                return
+            }
+        }
+    }
+
+    private fun checkGpsStatus() {
+        val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val gpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        if (!gpsStatus) {
+            requireActivity().showEnableLocationSettingDialog()
+        }
+    }
+
+    override fun onMapClick(p0: LatLng) {
+        Timber.w("Clicked map in $p0")
     }
 }
