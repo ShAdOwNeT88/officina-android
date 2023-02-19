@@ -3,8 +3,8 @@
     {
       "beaconName": "BlueUp-01-011671",
       "beaconId": "0x00626c75657570626561636f6e7307",
-      "trackStartRange": 0.50,
-      "trackStopRange": 0.50,
+      "trackStartRange": 0.25,
+      "trackStopRange": 0.25,
       "monumentName": "L'Abbazia Di San Fortunato",
       "location": {
         "latitude": 41.0334484,

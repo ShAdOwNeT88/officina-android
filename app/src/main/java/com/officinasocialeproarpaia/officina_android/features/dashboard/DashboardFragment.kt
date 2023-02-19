@@ -122,20 +122,21 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
 
         updateSeekBarTime = object : Runnable {
             override fun run() {
-                timeElapsed = mediaPlayer.currentPosition.toDouble()
-                finalTime = mediaPlayer.duration.toDouble()
-                val timeElapsedMin = (timeElapsed / 1000 / 60).toInt()
-                val timeElapsedSec = (timeElapsed / 1000 % 60).toInt()
-                val finalTimeMin = (finalTime / 1000 / 60).toInt()
-                val finalTimeSec = (finalTime / 1000 % 60).toInt()
+                if (mediaPlayer.isPlaying) {
+                    timeElapsed = mediaPlayer.currentPosition.toDouble()
+                    finalTime = mediaPlayer.duration.toDouble()
+                    val timeElapsedMin = (timeElapsed / 1000 / 60).toInt()
+                    val timeElapsedSec = (timeElapsed / 1000 % 60).toInt()
+                    val finalTimeMin = (finalTime / 1000 / 60).toInt()
+                    val finalTimeSec = (finalTime / 1000 % 60).toInt()
 
-                binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
-                binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
+                    binding.monumentDetails.monumentAudioSeekBar.max = finalTime.toInt()
+                    binding.monumentDetails.monumentAudioSeekBar.progress = timeElapsed.toInt()
 
-                binding.monumentDetails.monumentAudioDuration.text = String.format(
-                    Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
-                )
-
+                    binding.monumentDetails.monumentAudioDuration.text = String.format(
+                        Locale.getDefault(), resources.getString(R.string.audio_track_time), timeElapsedMin, timeElapsedSec, finalTimeMin, finalTimeSec
+                    )
+                }
                 durationHandler.postDelayed(this, 100)
             }
         }
@@ -149,7 +150,7 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                 mediaPlayer.prepare()
                 timeElapsed = mediaPlayer.currentPosition.toDouble()
                 finalTime = mediaPlayer.duration.toDouble()
-                //play()
+                play()
             }
         } catch (e: IOException) {
             Timber.e("Exception during media player init $e")
@@ -172,12 +173,14 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
     }
 
     private fun stop() {
-        mediaPlayer.stop()
-        mediaPlayer.reset()
-        currentTrack = null
-        binding.monumentDetails.monumentAudioTitle.text = ""
-        binding.monumentDetails.monumentAudioSeekBar.progress = 0
-        binding.monumentDetails.monumentAudioDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
+        if (mediaPlayer.isPlaying) {
+            mediaPlayer.stop()
+            mediaPlayer.reset()
+            currentTrack = null
+            binding.monumentDetails.monumentAudioTitle.text = ""
+            binding.monumentDetails.monumentAudioSeekBar.progress = 0
+            binding.monumentDetails.monumentAudioDuration.text = String.format(Locale.getDefault(), resources.getString(R.string.audio_track_time), 0, 0, 0, 0)
+        }
     }
 
     private fun setBeaconManager() {
@@ -194,8 +197,10 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout(BeaconParser.URI_BEACON_LAYOUT))
         // The example shows how to find iBeacon.
         beaconManager.beaconParsers.add(BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"))
+        beaconManager.backgroundScanPeriod = 1500L
+        beaconManager.foregroundScanPeriod = 1500L
 
-        //id1: 0x00626c75657570626561636f6e7307 about 1.281532517328134 meters away
+        //id1: 0x00626c7565757062656mBeaconManager.setBackgroundScanPeriod(1100l);1636f6e7307 about 1.281532517328134 meters away
         //Beacon data identifiers [0x00626c75657570626561636f6e7307] rssi -75 txPower -69 bluetoothAddress CD:6F:88:9C:1C:44 beaconTypeCode 16 serviceUuid 65194 serviceUuid128Bit [B@4a08072
         //Beacon data manufacturer 65194 bluetoothName BlueUp-01-011671 parserIdentifier null isMultiFrameBeacon false runningAverageRssi -74.71428571428571
         //Beacon data measurementCount 9 packetCount 1 firstCycleDetectionTimestamp 1674385070391 lastCycleDetectionTimestamp 1674385070391
@@ -206,10 +211,14 @@ class DashboardFragment : Fragment(), BeaconConsumer, OnMapReadyCallback, Google
                 if (beacon.distance < monument.trackStartRange) {
                     //setMonumentAudioTrack(monument)
                     //TODO This causing crashes and general instability right now
-                    //setMonumentDetail(monument = monument)
+                    //TODO Need to check when i walk away from a particular beacon otherwise the app stops  all the audios even if I'm out of range
+                    //TODO for another beacon and not the one that I'm listen to.
+                    Timber.e("Beacon in range ${beacon.id1} with distance ${beacon.distance}")
+                    setMonumentDetail(monument = monument)
                 } else if (beacon.distance > monument.trackStopRange) {
                     //TODO This causing crashes and general instability right now
-                    //stop()
+                    Timber.e("No beacons in range")
+                    stop()
                 } else {
                     Timber.w("The monument is too far away so please get closer BeaconName: ${beacon.bluetoothName} BeaconId: ${beacon.id1}")
                 }
